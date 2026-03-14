@@ -14,6 +14,7 @@ from apps.slack.utils import (
     get_sponsors_data,
     get_staff_data,
     get_text,
+    normalize_markdown_for_slack,
     strip_markdown,
 )
 
@@ -390,3 +391,28 @@ class TestGetPostsData:
 
             result = get_posts_data()
             assert result is None
+
+
+class TestNormalizeMarkdownForSlack:
+    @pytest.mark.parametrize(
+        ("input_text", "expected_output"),
+        [
+            ("", ""),
+            (None, None),
+            ("**bold text**", "*bold text*"),
+            ("normal **bold** text", "normal *bold* text"),
+            ("**bold1** and **bold2**", "*bold1* and *bold2*"),
+            ("__italic text__", "_italic text_"),
+            ("normal __italic__ text", "normal _italic_ text"),
+            ("# Heading 1", "*Heading 1*"),
+            ("## Heading 2", "*Heading 2*"),
+            ("### Heading 3", "*Heading 3*"),
+            ("**bold** and __italic__", "*bold* and _italic_"),
+            ("# Title\n**content**", "*Title*\n*content*"),
+            ("plain text", "plain text"),
+            ("already *slack* bold", "already *slack* bold"),
+        ],
+    )
+    def test_normalize_markdown_for_slack(self, input_text, expected_output):
+        """Test normalize_markdown_for_slack converts Markdown to Slack mrkdwn."""
+        assert normalize_markdown_for_slack(input_text) == expected_output
