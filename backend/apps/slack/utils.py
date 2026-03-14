@@ -57,11 +57,12 @@ def normalize_markdown_for_slack(text: str) -> str:
 
     Slack uses a different syntax for some Markdown elements. This function
     normalizes AI-generated Markdown responses so they render correctly in
-    Slack messages.
+    Slack messages. Code spans and fenced code blocks are preserved as-is
+    so that inline technical content is never corrupted.
 
-    Conversions applied:
+    Conversions applied (outside of code spans/blocks):
         - ``**text**`` -> ``*text*`` (bold)
-        - ``__text__`` -> ``_text_`` (italic)
+        - ``__text__`` -> ``*text*`` (bold, double-underscore is bold in Markdown)
         - ``# Heading`` -> ``*Heading*`` (headings become bold)
 
     Args:
@@ -74,19 +75,39 @@ def normalize_markdown_for_slack(text: str) -> str:
     if not text:
         return text
 
+    # --- Step 1: protect code regions with placeholders ---
+    placeholders: dict[str, str] = {}
+
+    def stash(match: re.Match) -> str:
+        key = f"\x00CODE{len(placeholders)}\x00"
+        placeholders[key] = match.group(0)
+        return key
+
+    # Protect fenced code blocks first (``` ... ``` or ~~~ ... ~~~)
+    text = re.sub(r"```[\s\S]*?```|~~~[\s\S]*?~~~", stash, text)
+
+    # Protect inline code spans (single backtick)
+    text = re.sub(r"`[^`\n]+`", stash, text)
+
+    # --- Step 2: apply Markdown -> Slack mrkdwn conversions ---
+
     # Convert headings (###, ##, #) to bold
     text = re.sub(r"^#{1,6}\s+(.+)$", r"*\1*", text, flags=re.MULTILINE)
 
     # Convert **bold** to *bold* (must run before italic to avoid conflicts)
     text = re.sub(r"\*\*(.+?)\*\*", r"*\1*", text)
 
-    # Convert __italic__ to _italic_
-    text = re.sub(r"__(.+?)__", r"_\1_", text)
+    # Convert __bold__ to *bold* (double-underscore means bold in Markdown, not italic)
+    text = re.sub(r"__(.+?)__", r"*\1*", text)
+
+    # Convert _italic_ to _italic_ (single underscore -- already correct for Slack)
+    text = re.sub(r"(?<![\w*])_([^_\n]+)_(?![\w*])", r"_\1_", text)
+
+    # --- Step 3: restore protected code regions ---
+    for key, original in placeholders.items():
+        text = text.replace(key, original)
 
     return text
-
-
-@lru_cache
 def get_gsoc_projects(year: int) -> list:
     """Get GSoC projects.
 
