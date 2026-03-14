@@ -23,6 +23,7 @@ export type CardProps = {
   icons?: Icon
   isActive?: boolean
   labels?: string[]
+  repositoryLanguages?: string[]
   level?: Level
   projectLink?: string
   projectName?: string
