@@ -49,6 +49,7 @@ const ContributePage = () => {
           icons={filteredIcons}
           key={issue.objectID ?? issue.url}
           labels={issue.labels}
+          repositoryLanguages={issue.repositoryLanguages}
           projectLink={issue.projectUrl}
           projectName={issue.projectName}
           summary={issue.summary ?? ''}
