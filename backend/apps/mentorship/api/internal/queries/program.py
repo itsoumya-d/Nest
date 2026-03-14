@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 class ProgramQuery:
     """Program queries."""
 
-    @strawberry.field
+    @strawberry.field(permission_classes=[IsAuthenticated])
     def get_program(self, info: strawberry.Info, program_key: str) -> ProgramNode | None:
         """Get a program by Key."""
         try:
@@ -32,9 +32,7 @@ class ProgramQuery:
             logger.warning(msg, exc_info=True)
             return None
 
-        if program.status != Program.ProgramStatus.PUBLISHED and not program.user_has_access(
-            info.context.request.user
-        ):
+        if not program.user_has_access(info.context.request.user):
             return None
 
         return program
