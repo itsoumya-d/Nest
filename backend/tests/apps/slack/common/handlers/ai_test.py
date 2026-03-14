@@ -15,24 +15,36 @@ from apps.slack.common.handlers.ai import (
 class TestAiHandler:
     """Test cases for AI handler functionality."""
 
+    @patch("apps.slack.common.handlers.ai.normalize_markdown_for_slack")
     @patch("apps.slack.common.handlers.ai.process_ai_query")
     @patch("apps.slack.common.handlers.ai.markdown")
-    def test_get_blocks_with_successful_response(self, mock_markdown, mock_process_ai_query):
-        """Test get_blocks with successful AI response."""
+    def test_get_blocks_with_successful_response(
+        self, mock_markdown, mock_process_ai_query, mock_normalize
+    ):
+        """Test get_blocks normalizes Markdown and returns a block on success."""
         query = "What is OWASP?"
-        ai_response = "OWASP is a security organization..."
+        ai_response = "OWASP is a **security** organization..."
+        normalized = "OWASP is a *security* organization..."
         expected_block = {
             "type": "section",
-            "text": {"type": "mrkdwn", "text": ai_response},
+            "text": {"type": "mrkdwn", "text": normalized},
         }
 
         mock_process_ai_query.return_value = ai_response
+        mock_normalize.return_value = normalized
         mock_markdown.return_value = expected_block
 
         result = get_blocks(query)
 
         mock_process_ai_query.assert_called_once_with(query.strip())
-        mock_markdown.assert_called_once_with(ai_response)
+        mock_normalize.assert_called_once_with(ai_response)
+        mock_markdown.assert_called_once_with(normalized)
+        assert result == [expected_block]
+        result = get_blocks(query)
+
+        mock_process_ai_query.assert_called_once_with(query.strip())
+        mock_normalize.assert_called_once_with(ai_response)
+        mock_markdown.assert_called_once_with(normalized)
         assert result == [expected_block]
 
     @patch("apps.slack.common.handlers.ai.process_ai_query")
