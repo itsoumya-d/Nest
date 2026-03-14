@@ -17,6 +17,7 @@ const Card = ({
   cardKey,
   icons,
   labels,
+  repositoryLanguages,
   level,
   projectLink,
   projectName,
@@ -135,6 +136,19 @@ const Card = ({
           {labels && labels.length > 0 && (
             <div className="flex flex-wrap gap-2">
               <LabelList entityKey={`${cardKey}-labels`} labels={labels} maxVisible={5} />
+            </div>
+          )}
+          {/* Repository Languages Section */}
+          {repositoryLanguages && repositoryLanguages.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {repositoryLanguages.map((lang) => (
+                <span
+                  key={`${cardKey}-lang-${lang}`}
+                  className="flex items-center gap-1 rounded-md border border-sky-400 bg-transparent px-2 py-1 text-xs text-sky-700 dark:border-sky-400 dark:text-sky-300"
+                >
+                  {lang}
+                </span>
+              ))}
             </div>
           )}
           {/* Contributors section */}
