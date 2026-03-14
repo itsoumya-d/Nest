@@ -402,17 +402,29 @@ class TestNormalizeMarkdownForSlack:
             ("**bold text**", "*bold text*"),
             ("normal **bold** text", "normal *bold* text"),
             ("**bold1** and **bold2**", "*bold1* and *bold2*"),
-            ("__italic text__", "_italic text_"),
-            ("normal __italic__ text", "normal _italic_ text"),
+            # __text__ is bold in Markdown spec, must map to *text* (Slack bold)
+            ("__bold text__", "*bold text*"),
+            ("normal __bold__ text", "normal *bold* text"),
             ("# Heading 1", "*Heading 1*"),
             ("## Heading 2", "*Heading 2*"),
             ("### Heading 3", "*Heading 3*"),
-            ("**bold** and __italic__", "*bold* and _italic_"),
+            ("**bold** and __also bold__", "*bold* and *also bold*"),
             ("# Title\n**content**", "*Title*\n*content*"),
             ("plain text", "plain text"),
             ("already *slack* bold", "already *slack* bold"),
+            # Code spans must be preserved -- no transformations inside backticks
+            ("`**not bold**`", "`**not bold**`"),
+            ("Use `**bold**` syntax", "Use `**bold**` syntax"),
+            ("Result: `__value__`", "Result: `__value__`"),
+            # Fenced code blocks must be preserved unchanged
+            ("```\n**not bold**\n```", "```\n**not bold**\n```"),
+            ("text before\n```\n__code__\n```\ntext after", "text before\n```\n__code__\n```\ntext after"),
         ],
     )
     def test_normalize_markdown_for_slack(self, input_text, expected_output):
-        """Test normalize_markdown_for_slack converts Markdown to Slack mrkdwn."""
+        """Test normalize_markdown_for_slack converts Markdown to Slack mrkdwn.
+
+        Verifies bold/heading conversion, __bold__ semantics, and that
+        code spans and fenced blocks are never transformed.
+        """
         assert normalize_markdown_for_slack(input_text) == expected_output
