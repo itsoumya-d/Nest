@@ -42,6 +42,14 @@ const ProgramDetailsPage = () => {
     [program, username]
   )
 
+  const isMentor = useMemo(
+    () =>
+      !!program?.modules?.some((module) =>
+        module.mentors?.some((mentor) => mentor.login === username)
+      ),
+    [program, username]
+  )
+
   const canUpdateStatus = useMemo(() => {
     if (!isAdmin || !program?.status) return false
     return true
@@ -101,6 +109,16 @@ const ProgramDetailsPage = () => {
         statusCode={404}
         title="Program Not Found"
         message="Sorry, the program you're looking for doesn't exist."
+      />
+    )
+  }
+
+  if (!isAdmin && !isMentor) {
+    return (
+      <ErrorDisplay
+        statusCode={403}
+        title="Access Denied"
+        message="You do not have permission to view this mentorship program."
       />
     )
   }
